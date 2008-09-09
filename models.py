@@ -16,10 +16,7 @@ def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
 
     return res
 
-class BlockRate(models.Model):
-    class Admin:
-        pass
-        
+class BlockRate(models.Model):        
     ip = models.IPAddressField('IP', db_index=True, max_length=15)
     date_add = models.DateTimeField('datum', db_index=True, default=datetime.now(), blank=True, editable=False)
     label = models.CharField('label', default='default', db_index=True, max_length=15)
@@ -78,9 +75,6 @@ class BlockRate(models.Model):
             return False
 
 class BlockedIP(models.Model):
-    class Admin:
-        pass
-
     ip = models.CharField('IP', db_index=True, max_length=15, unique=True)
     date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
 
@@ -96,9 +90,6 @@ class BlockedIP(models.Model):
             return False
 
 class BlockedHost(models.Model):
-    class Admin:
-        pass
-
     host = models.CharField('hostnaam', db_index=True, max_length=200, unique=True)
     date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
 
