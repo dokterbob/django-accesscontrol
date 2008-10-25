@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from django.conf import settings
+
 def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
     """ Check whether a request is blocked by IP, host-name and maximum rate.
     
@@ -35,6 +37,11 @@ def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
 
     return res
 
+DEFAULT_LABEL = getattr(settings, 'ACCESSCONTROL_DEFAULT_LABEL', 'default')
+DEFAULT_RATE = getattr(settings, 'ACCESSCONTROL_DEFAULT_RATE', 3)
+DEFAULT_TIMESPAN = getattr(settings, 'ACCESSCONTROL_DEFAULT_TIMESPAN', timedelta(hours=1))
+AUTO_EXPIRE = getattr(settings, 'ACCESSCONTROL_AUTO_EXPIRE', True)
+
 class BlockRate(models.Model):
     """ Block IP's by rate. """      
     ip = models.IPAddressField('IP', db_index=True, max_length=15)
@@ -48,23 +55,16 @@ class BlockRate(models.Model):
         return '%s: %s' % (self.ip, self.date_add)
         
     @classmethod
-    def addEvent(self, ip, label=None, date_add=None):
+    def addEvent(self, ip, label=DEFAULT_LABEL, date_add=None):
         o = BlockRate()
         o.ip = ip
+        o.label = label
         if date_add:
             o.date_add = date_add
-        if label:
-            o.label = label
         o.save()
     
     @classmethod
-    def expireEvents(self, ip, timespan=None, label=None): 
-        if not label:
-            label='default'
-            
-        if not timespan:
-            timespan=timedelta(hours=1)   
-        
+    def expireEvents(self, ip, timespan=DEFAULT_TIMESPAN, label=DEFAULT_LABEL):         
         starttime = datetime.now() - timespan
         q = self.objects.filter(date_add__lte=starttime)
         if label:
@@ -73,14 +73,11 @@ class BlockRate(models.Model):
         q.delete()
     
     @classmethod
-    def isBlocked(self, ip, label=None, rate=None, timespan=None):
-        if not label:
-            label='default'
-            
-        if not rate:
-            rate=3
-      
+    def isBlocked(self, ip, label=DEFAULT_LABEL, rate=DEFAULT_RATE, timespan=DEFAULT_TIMESPAN):
         starttime = datetime.now() - timespan
+        
+        if AUTO_EXPIRE:
+            self.expireEvents(ip, timespan, label)
         
         query = self.objects.filter(ip__exact=ip, date_add__gte=starttime)
         if label:
