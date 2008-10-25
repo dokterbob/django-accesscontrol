@@ -1,8 +1,11 @@
-from django.db import models
+import logging
 
 from socket import gethostbyaddr
 
 from datetime import datetime, timedelta
+
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
     """ Check whether a request is blocked by IP, host-name and maximum rate.
@@ -86,14 +89,14 @@ class BlockRate(models.Model):
         num = q.count()
         
         if num > rate:
-            print 'rate exceeded'
+            logging.warn('accesscontrol: host blocked, rate exceeded')
             return True
         else:
             return False
 
 class BlockedIP(models.Model):
     """ Block (partial) IP addresses. """
-    ip = models.CharField('IP', db_index=True, max_length=15, unique=True)
+    ip = models.CharField('IP', db_index=True, max_length=15, unique=True, help_text=_("Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character."))
     date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
 
     def __str__(self):
@@ -101,15 +104,16 @@ class BlockedIP(models.Model):
 
     @classmethod
     def isBlocked(self, ip):
-        if self.objects.extra(where=["LOCATE(ip,'%s')" % ip]).count():
-            print 'host blocked'
+        whereclause = "'%s' LIKE ip" % ip
+        if self.objects.extra(where=[whereclause]).count():
+            logging.warn('accesscontrol: host blocked, forbidden IP')
             return True
         else:
             return False
 
 class BlockedHost(models.Model):
     """ Block (partial) hostnames. """
-    host = models.CharField('hostnaam', db_index=True, max_length=255, unique=True)
+    host = models.CharField('hostnaam', db_index=True, max_length=255, unique=True, help_text="Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character.")
     date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
 
     def __str__(self):
@@ -117,8 +121,9 @@ class BlockedHost(models.Model):
 
     @classmethod
     def isBlocked(self, host):
-        if self.objects.extra(where=["LOCATE(host,'%s')" % host]).count():
-            print 'IP blocked'
+        whereclause = "'%s' LIKE host" % host
+        if self.objects.extra(where=[whereclause]).count():
+            logging.warn('accesscontrol: host blocked, forbidden host')
             return True
         else:
             return False
