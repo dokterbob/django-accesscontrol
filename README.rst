@@ -17,18 +17,14 @@ time, taking a look at models.py and tests.py should provide a good start.
 
 Configuration variables
 =======================
-DEFAULT_LABEL     [default]
----------------------------
-Default label for rate control mechanism.
+* DEFAULT_LABEL     [default]
+  Default label for rate control mechanism.
 
-DEFAULT_RATE      [3]
----------------------
-Default maximum number of events withing timespan.
+* DEFAULT_RATE      [3]
+  Default maximum number of events withing timespan.
 
-DEFAULT_TIMESPAN  [timedelta(hours=1))]
----------------------------------------
-Default timespan for checking the maximum rate.
+* DEFAULT_TIMESPAN  [timedelta(hours=1)]
+  Default timespan for checking the maximum rate.
 
-AUTO_EXPIRE       [True]
-------------------------
-Automatically expire events when executing BlockRate.isBlocked().
+* AUTO_EXPIRE       [True]
+  Automatically expire events when executing BlockRate.isBlocked().
