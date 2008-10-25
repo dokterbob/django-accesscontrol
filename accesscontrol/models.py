@@ -5,6 +5,22 @@ from socket import gethostbyaddr
 from datetime import datetime, timedelta
 
 def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
+    """ Check whether a request is blocked by IP, host-name and maximum rate.
+    
+        Parameters:
+        ip        -- The IP address of the request.
+        host      -- The host name belonging to the specified IP.
+                     If not set the host gets automatically resolved.
+        label     -- A label for the kind of action performed for rate
+                     blocking. This way we can use different maximum 
+                     rates for different kinds of actions.
+        rate      -- The maximum number of events for this label within timespan.
+        timespan  -- The timespan over which the rate is calculated.
+        
+        If no host, label, rate or timespan is specified the default values
+        for delegate functions BlockedIP.isBlocked, BlockedHost.isBlocked and 
+        BlockRate.isBlocked are used.
+    """
     if not host:
         host = gethostbyaddr(ip)[0]
 
@@ -16,7 +32,8 @@ def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
 
     return res
 
-class BlockRate(models.Model):        
+class BlockRate(models.Model):
+    """ Block IP's by rate. """      
     ip = models.IPAddressField('IP', db_index=True, max_length=15)
     date_add = models.DateTimeField('datum', db_index=True, default=datetime.now(), blank=True, editable=False)
     label = models.CharField('label', default='default', db_index=True, max_length=15)
@@ -75,6 +92,7 @@ class BlockRate(models.Model):
             return False
 
 class BlockedIP(models.Model):
+    """ Block (partial) IP addresses. """
     ip = models.CharField('IP', db_index=True, max_length=15, unique=True)
     date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
 
@@ -90,7 +108,8 @@ class BlockedIP(models.Model):
             return False
 
 class BlockedHost(models.Model):
-    host = models.CharField('hostnaam', db_index=True, max_length=200, unique=True)
+    """ Block (partial) hostnames. """
+    host = models.CharField('hostnaam', db_index=True, max_length=255, unique=True)
     date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
 
     def __str__(self):
