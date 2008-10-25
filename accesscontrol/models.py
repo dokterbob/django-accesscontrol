@@ -19,8 +19,11 @@ def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
         label     -- A label for the kind of action performed for rate
                      blocking. This way we can use different maximum 
                      rates for different kinds of actions.
+                     Default: ACCESSCONTROL_DEFAULT_LABEL
         rate      -- The maximum number of events for this label within timespan.
+                     Default: DEFAULT_RATE
         timespan  -- The timespan over which the rate is calculated.
+                     Default: ACCESSCONTROL_DEFAULT_TIMESPAN
         
         If no host, label, rate or timespan is specified the default values
         for delegate functions BlockedIP.isBlocked, BlockedHost.isBlocked and 
@@ -44,9 +47,9 @@ AUTO_EXPIRE = getattr(settings, 'ACCESSCONTROL_AUTO_EXPIRE', True)
 
 class BlockRate(models.Model):
     """ Block IP's by rate. """      
-    ip = models.IPAddressField('IP', db_index=True, max_length=15)
-    date_add = models.DateTimeField('datum', db_index=True, auto_now_add=True, editable=False)
-    label = models.CharField('label', default='default', db_index=True, max_length=15)
+    ip = models.IPAddressField(_('IP address'), db_index=True, max_length=15)
+    date_add = models.DateTimeField(_('date'), db_index=True, auto_now_add=True, editable=False)
+    label = models.CharField(_('label'), default='default', db_index=True, max_length=15)
 
     class Meta:
         ordering = ('-date_add',)
@@ -86,15 +89,15 @@ class BlockRate(models.Model):
         num = query.count()
         
         if num >= rate:
-            logging.warn('accesscontrol: host \'%s\' blocked, rate exceeded' % ip)
+            logging.warn(_('accesscontrol: host \'%s\' blocked, rate exceeded') % ip)
             return True
         else:
             return False
 
 class BlockedIP(models.Model):
     """ Block (partial) IP addresses. """
-    ip = models.CharField('IP', db_index=True, max_length=15, unique=True, help_text=_("Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character."))
-    date_add = models.DateTimeField('datum', auto_now_add=True, editable=False)
+    ip = models.CharField(_('IP address'), db_index=True, max_length=15, unique=True, help_text=_("Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character."))
+    date_add = models.DateTimeField(_('date'), auto_now_add=True, editable=False)
 
     def __str__(self):
         return self.ip
@@ -103,15 +106,15 @@ class BlockedIP(models.Model):
     def isBlocked(self, ip):
         whereclause = "'%s' LIKE ip" % ip
         if self.objects.extra(where=[whereclause]).count():
-            logging.warn('accesscontrol: host \'%s\' blocked, forbidden IP' % ip)
+            logging.warn(_('accesscontrol: host \'%s\' blocked, forbidden IP') % ip)
             return True
         else:
             return False
 
 class BlockedHost(models.Model):
     """ Block (partial) hostnames. """
-    host = models.CharField('hostnaam', db_index=True, max_length=255, unique=True, help_text="Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character.")
-    date_add = models.DateTimeField('datum', auto_now_add=True, editable=False)
+    host = models.CharField(_('hostname'), db_index=True, max_length=255, unique=True, help_text=_("Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character."))
+    date_add = models.DateTimeField(_('date'), auto_now_add=True, editable=False)
 
     def __str__(self):
         return self.host
@@ -120,7 +123,7 @@ class BlockedHost(models.Model):
     def isBlocked(self, host):
         whereclause = "'%s' LIKE host" % host
         if self.objects.extra(where=[whereclause]).count():
-            logging.warn('accesscontrol: host \'%s\' blocked, forbidden host' % host)
+            logging.warn(_('accesscontrol: host \'%s\' blocked, forbidden host') % host)
             return True
         else:
             return False
