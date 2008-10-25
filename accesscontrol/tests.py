@@ -35,22 +35,22 @@ class BlockedHostTestCase(TestCase):
         self.assertEqual(BlockedHost.isBlocked('jantje'), False)
 
 from datetime import timedelta
-from time import time, sleep
+from time import time #, sleep
         
 class BlockRateTestCase(TestCase):
     def setUp(self):
         # Add 10 consecutive events quickly after one another
         self.ip = '10.0.0.1'
-        self.rate = 11
+        self.rate = 10
         self.start = time()
-        for a in range(1, self.rate):
+        for a in range(1, self.rate + 1):
             BlockRate.addEvent(self.ip)
-            sleep(1)
+            #sleep(1)
                     
     def testRate(self):
         self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate-1, timespan=timedelta(seconds=time() - self.start)))
         self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate+1, timespan=timedelta(seconds=time() - self.start)))
         
     def testTimespan(self):
-        self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=time() - self.start)+timedelta(seconds=1)))
+        self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=time() - self.start + 1)))
         self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=0)))

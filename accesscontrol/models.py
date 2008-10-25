@@ -38,8 +38,11 @@ def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
 class BlockRate(models.Model):
     """ Block IP's by rate. """      
     ip = models.IPAddressField('IP', db_index=True, max_length=15)
-    date_add = models.DateTimeField('datum', db_index=True, default=datetime.now(), blank=True, editable=False)
+    date_add = models.DateTimeField('datum', db_index=True, auto_now_add=True, editable=False)
     label = models.CharField('label', default='default', db_index=True, max_length=15)
+
+    class Meta:
+        ordering = ('-date_add',)
 
     def __str__(self):
         return '%s: %s' % (self.ip, self.date_add)
@@ -76,20 +79,17 @@ class BlockRate(models.Model):
             
         if not rate:
             rate=3
-            
-        if not timespan:
-            timespan=timedelta(hours=1)
-            
+      
         starttime = datetime.now() - timespan
         
-        q = self.objects.filter(ip__exact=ip, date_add__gte=starttime)
+        query = self.objects.filter(ip__exact=ip, date_add__gte=starttime)
         if label:
-            q = q.filter(label__exact=label)        
+            query = query.filter(label__exact=label)        
         
-        num = q.count()
+        num = query.count()
         
-        if num > rate:
-            logging.warn('accesscontrol: host blocked, rate exceeded')
+        if num >= rate:
+            logging.warn('accesscontrol: host \'%s\' blocked, rate exceeded' % ip)
             return True
         else:
             return False
@@ -97,7 +97,7 @@ class BlockRate(models.Model):
 class BlockedIP(models.Model):
     """ Block (partial) IP addresses. """
     ip = models.CharField('IP', db_index=True, max_length=15, unique=True, help_text=_("Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character."))
-    date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
+    date_add = models.DateTimeField('datum', auto_now_add=True, editable=False)
 
     def __str__(self):
         return self.ip
@@ -106,7 +106,7 @@ class BlockedIP(models.Model):
     def isBlocked(self, ip):
         whereclause = "'%s' LIKE ip" % ip
         if self.objects.extra(where=[whereclause]).count():
-            logging.warn('accesscontrol: host blocked, forbidden IP')
+            logging.warn('accesscontrol: host \'%s\' blocked, forbidden IP' % ip)
             return True
         else:
             return False
@@ -114,7 +114,7 @@ class BlockedIP(models.Model):
 class BlockedHost(models.Model):
     """ Block (partial) hostnames. """
     host = models.CharField('hostnaam', db_index=True, max_length=255, unique=True, help_text="Use a %% sign for multi-character wildcards and a _ sign for a single wildcard character.")
-    date_add = models.DateTimeField('datum', default=datetime.now(), blank=True, editable=False)
+    date_add = models.DateTimeField('datum', auto_now_add=True, editable=False)
 
     def __str__(self):
         return self.host
@@ -123,7 +123,7 @@ class BlockedHost(models.Model):
     def isBlocked(self, host):
         whereclause = "'%s' LIKE host" % host
         if self.objects.extra(where=[whereclause]).count():
-            logging.warn('accesscontrol: host blocked, forbidden host')
+            logging.warn('accesscontrol: host \'%s\' blocked, forbidden host' % host)
             return True
         else:
             return False
