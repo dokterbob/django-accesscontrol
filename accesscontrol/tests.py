@@ -8,11 +8,11 @@ class BlockedIPTestCase(TestCase):
         BlockedIP(ip='123.234%').save()
         
     def testFull(self):
-        self.assertEqual(BlockedIP.isBlocked('10.0.0.1'), True)
+        self.assert_(BlockedIP.isBlocked('10.0.0.1'))
         self.assertEqual(BlockedIP.isBlocked('10.0.0.2'), False)
         
     def testPartial(self):
-        self.assertEqual(BlockedIP.isBlocked('123.234.1.1'), True)
+        self.assert_(BlockedIP.isBlocked('123.234.1.1'))
         self.assertEqual(BlockedIP.isBlocked('123.235.1.1'), False)
         
     def testOther(self):
@@ -24,12 +24,33 @@ class BlockedHostTestCase(TestCase):
         BlockedHost(host='pieter.xs4all.nl').save()
     
     def testFull(self):
-        self.assertEqual(BlockedHost.isBlocked('pieter.xs4all.nl'), True)
+        self.assert_(BlockedHost.isBlocked('pieter.xs4all.nl'))
         self.assertEqual(BlockedHost.isBlocked('jantje.xs4all.nl'), False)
         
     def testPartial(self):
-        self.assertEqual(BlockedHost.isBlocked('joepie'), True)
+        self.assert_(BlockedHost.isBlocked('joepie'))
         self.assertEqual(BlockedHost.isBlocked('jantje'), False)
         
     def testOther(self):
-        self.assertEqual(BlockedHost.isBlocked('jantje'), False)    
+        self.assertEqual(BlockedHost.isBlocked('jantje'), False)
+
+from datetime import timedelta
+from time import time, sleep
+        
+class BlockRateTestCase(TestCase):
+    def setUp(self):
+        # Add 10 consecutive events quickly after one another
+        self.ip = '10.0.0.1'
+        self.rate = 11
+        self.start = time()
+        for a in range(1, self.rate):
+            BlockRate.addEvent(self.ip)
+            sleep(1)
+                    
+    def testRate(self):
+        self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate-1, timespan=timedelta(seconds=time() - self.start)))
+        self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate+1, timespan=timedelta(seconds=time() - self.start)))
+        
+    def testTimespan(self):
+        self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=time() - self.start)+timedelta(seconds=1)))
+        self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=0)))
