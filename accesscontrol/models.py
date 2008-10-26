@@ -21,28 +21,21 @@ def is_blocked(ip, host=None, label=None, rate=None, timespan=None):
                      rates for different kinds of actions.
                      Default: ACCESSCONTROL_DEFAULT_LABEL
         rate      -- The maximum number of events for this label within timespan.
-                     Default: DEFAULT_RATE
         timespan  -- The timespan over which the rate is calculated.
-                     Default: ACCESSCONTROL_DEFAULT_TIMESPAN
-        
-        If no host, label, rate or timespan is specified the default values
-        for delegate functions BlockedIP.isBlocked, BlockedHost.isBlocked and 
-        BlockRate.isBlocked are used.
     """
     if not host:
         host = gethostbyaddr(ip)[0]
 
     res =  BlockedIP.isBlocked(ip) or BlockedHost.isBlocked(host) or BlockRate.isBlocked(ip, label, rate, timespan)
 
-    if not res:
+    if not res and rate:
+        assert timespan, 'Rate set but no timespan given.'
         BlockRate.expireEvents(ip, label)
         BlockRate.addEvent(ip, label)
 
     return res
 
 DEFAULT_LABEL = getattr(settings, 'ACCESSCONTROL_DEFAULT_LABEL', 'default')
-DEFAULT_RATE = getattr(settings, 'ACCESSCONTROL_DEFAULT_RATE', 3)
-DEFAULT_TIMESPAN = getattr(settings, 'ACCESSCONTROL_DEFAULT_TIMESPAN', timedelta(hours=1))
 AUTO_EXPIRE = getattr(settings, 'ACCESSCONTROL_AUTO_EXPIRE', True)
 
 class BlockRate(models.Model):
@@ -67,7 +60,7 @@ class BlockRate(models.Model):
         o.save()
     
     @classmethod
-    def expireEvents(self, ip, timespan=DEFAULT_TIMESPAN, label=DEFAULT_LABEL):         
+    def expireEvents(self, ip, timespan, label=DEFAULT_LABEL):         
         starttime = datetime.now() - timespan
         q = self.objects.filter(date_add__lte=starttime)
         if label:
@@ -76,7 +69,7 @@ class BlockRate(models.Model):
         q.delete()
     
     @classmethod
-    def isBlocked(self, ip, label=DEFAULT_LABEL, rate=DEFAULT_RATE, timespan=DEFAULT_TIMESPAN):
+    def isBlocked(self, ip, rate, timespan, label=DEFAULT_LABEL):
         starttime = datetime.now() - timespan
         
         if AUTO_EXPIRE:

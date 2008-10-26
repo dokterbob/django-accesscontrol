@@ -20,12 +20,6 @@ Configuration variables
 * DEFAULT_LABEL     [default]
   Default label for rate control mechanism.
 
-* DEFAULT_RATE      [3]
-  Default maximum number of events withing timespan.
-
-* DEFAULT_TIMESPAN  [timedelta(hours=1)]
-  Default timespan for checking the maximum rate.
-
 * AUTO_EXPIRE       [True]
   Automatically expire events when executing BlockRate.isBlocked().
 
