@@ -37,6 +37,13 @@ label     -- A label for the kind of action performed for rate
 rate      -- The maximum number of events for this label within timespan.
 timespan  -- The timespan over which the rate is calculated.
 
+Todo
+====
+* Write TestCase for view decorator.
+* Change decorator into MiddleWare (with option to ignore urls).
+* Use decorator_from_middleware instead.
+* Suffix configuration variables to avoid confusion.
+
 Configuration variables
 =======================
 * DEFAULT_LABEL [default]  --  Default label for rate control mechanism.
