@@ -28,3 +28,7 @@ Configuration variables
 
 * AUTO_EXPIRE       [True]
   Automatically expire events when executing BlockRate.isBlocked().
+
+License
+=======
+This product is released under the GPL version 3.
