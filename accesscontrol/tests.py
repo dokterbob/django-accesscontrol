@@ -43,8 +43,12 @@ class BlockRateTestCase(TestCase):
         self.ip = '10.0.0.1'
         self.rate = 10
         self.start = time()
+        self.otherlabel = 'comment'
+        self.onelabel = 'vote'
+        
         for a in range(1, self.rate + 1):
             BlockRate.addEvent(self.ip)
+            BlockRate.addEvent(self.ip, label=self.onelabel)
             #sleep(1)
                     
     def testRate(self):
@@ -54,3 +58,11 @@ class BlockRateTestCase(TestCase):
     def testTimespan(self):
         self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=time() - self.start + 1)))
         self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate, timespan=timedelta(seconds=0)))
+
+    def testLabel(self):
+        self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate-1, label=self.otherlabel, timespan=timedelta(seconds=time() - self.start)))
+
+        self.assert_(BlockRate.isBlocked(self.ip, rate=self.rate-1, label=self.onelabel, timespan=timedelta(seconds=time() - self.start)))
+        self.failIf(BlockRate.isBlocked(self.ip, rate=self.rate+1, label=self.onelabel, timespan=timedelta(seconds=time() - self.start)))
+
+        
